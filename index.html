@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <h1>Todo list</h1>
+    <form>
+        <input type="text" name="name" id="name" placeholder="name">
+        <input type="text" name="price" id="price" placeholder="price">
+        <input type="text" name="quantity" id="quantity" placeholder="quantity">
+        <button id="addBtn">Add product</button>
+    </form>
+    <div id="products"></div>
+    <script>
+        const addBtn = document.getElementById('addBtn');
+        addBtn.addEventListener('click', function (e) {
+            e.preventDefault()
+            if (addBtn.innerText === 'Add product') addProduct();
+            if (addBtn.innerText == 'Update') {
+                const id = addBtn.getAttribute('id')
+                updateProduct(id);
+            }
+        })
+
+        function loadProducts() {
+            fetch('/products')
+                .then(res => res.json())
+                .then(data => {
+                    // console.log(data)
+                    const productContainer = document.getElementById('products');
+                    productContainer.innerHTML = '';
+                    data.forEach(product => {
+                        const { _id, name, price, quantity } = product;
+                        const item = document.createElement('p');
+                        item.innerHTML = `
+                        Name: ${name} Price: ${price} Quantity: ${quantity}
+                        <button onClick="populateForm('${_id}')">Update</button>
+                        <button onClick="deleteProduct(event, '${_id}')">Delete</button>
+                        `;
+                        productContainer.appendChild(item);
+                    })
+                })
+        }
+        loadProducts();
+
+        function deleteProduct(event, id) {
+            fetch(`/delete/${id}`, {
+                method: 'DELETE'
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data) {
+                        event.target.parentNode.style.display = 'none';
+                    }
+                })
+        }
+
+        function populateForm(id) {
+            fetch(`/product/${id}`)
+                .then(res => res.json())
+                .then(data => {
+                    const { _id, name, price, quantity } = data;
+                    document.getElementById('name').value = name;
+                    document.getElementById('price').value = price;
+                    document.getElementById('quantity').value = quantity;
+                    const addBtn = document.getElementById('addBtn');
+                    addBtn.innerText = 'Update';
+                    addBtn.setAttribute('id', `${_id}`)
+                })
+        }
+
+        function updateProduct(id) {
+            // updated value
+            const name = document.getElementById('name').value;
+            const price = document.getElementById('price').value;
+            const quantity = document.getElementById('quantity').value;
+            const product = { name, price, quantity };
+            fetch(`/update/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(product)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data) {
+                        loadProducts();
+                    }
+                })
+        }
+
+        function addProduct() {
+            // updated value
+            const name = document.getElementById('name').value;
+            const price = document.getElementById('price').value;
+            const quantity = document.getElementById('quantity').value;
+            const product = { name, price, quantity };
+            // console.log(product)
+            fetch(`/addProduct`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(product)
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data) {
+                        loadProducts();
+                    }
+                })
+        }
+    </script>
+</body>
+
+</html>
